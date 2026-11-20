@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BBB",
+    "BPB",
+    "BBB"
+  ],
+  "key": {
+    "B": "minecraft:iron_block",
+    "P": "cuffed:padlock"
+  },
+  "result": {
+    "id": "cuffed:safe"
+  }
+}

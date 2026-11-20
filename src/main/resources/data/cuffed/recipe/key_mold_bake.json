@@ -1,0 +1,9 @@
+{
+  "type": "cuffed:key_mold_bake",
+  "ingredient": "cuffed:key_mold",
+  "result": {
+    "id": "cuffed:baked_key_mold"
+  },
+  "experience": 0.35,
+  "cookingtime": 200
+}

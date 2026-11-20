@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "NIN"
+  ],
+  "key": {
+    "I": "minecraft:iron_chain",
+    "N": "minecraft:iron_ingot"
+  },
+  "result": {
+    "id": "cuffed:handcuffs"
+  }
+}

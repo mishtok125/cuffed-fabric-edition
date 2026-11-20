@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "  N",
+    " NN",
+    "N  "
+  ],
+  "key": {
+    "N": "#c:cobblestones"
+  },
+  "result": {
+    "id": "cuffed:shackles_key"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "  N",
+    " NN",
+    "N  "
+  ],
+  "key": {
+    "N": "minecraft:copper_ingot"
+  },
+  "result": {
+    "id": "cuffed:handcuffs_key"
+  }
+}

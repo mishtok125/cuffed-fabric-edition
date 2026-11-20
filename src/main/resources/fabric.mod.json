@@ -1,0 +1,25 @@
+{
+	"schemaVersion": 1,
+	"id": "cuffed_fabric_edition",
+	"version": "${version}",
+	"name": "Cuffed: Fabric Edition",
+	"description": "Handcuffs, chains, keys, and lockpicking for roleplay. An unofficial Cuffed port for Fabric on newer versions.",
+	"authors": ["Lazr Productions", "mishtok"],
+	"contact": {
+		"sources": "https://github.com/LazrProductions/cuffed"
+	},
+	"license": "GPL-3.0",
+	"icon": "assets/cuffed/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["com.lazrproductions.cuffed.CuffedMod"],
+		"client": ["com.lazrproductions.cuffed.client.CuffedClient"]
+	},
+	"mixins": ["cuffed.mixins.json"],
+	"depends": {
+		"fabricloader": ">=0.20.1",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

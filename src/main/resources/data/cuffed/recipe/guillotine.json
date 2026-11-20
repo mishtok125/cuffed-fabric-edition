@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "WBW",
+    "WIW",
+    "W W"
+  ],
+  "key": {
+    "W": "#minecraft:planks",
+    "I": "minecraft:iron_ingot",
+    "B": "minecraft:iron_block"
+  },
+  "result": {
+    "id": "cuffed:guillotine"
+  }
+}

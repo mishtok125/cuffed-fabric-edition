@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "minecraft:paper",
+    "minecraft:paper",
+    "minecraft:paper",
+    "minecraft:rotten_flesh"
+  ],
+  "result": {
+    "count": 4,
+    "id": "cuffed:bandage"
+  }
+}

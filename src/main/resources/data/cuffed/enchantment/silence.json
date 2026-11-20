@@ -1,0 +1,20 @@
+{
+  "description": {
+    "translate": "enchantment.cuffed.silence"
+  },
+  "supported_items": "#cuffed:enchantable_restraints",
+  "weight": 2,
+  "max_level": 1,
+  "min_cost": {
+    "base": 1,
+    "per_level_above_first": 0
+  },
+  "max_cost": {
+    "base": 51,
+    "per_level_above_first": 0
+  },
+  "anvil_cost": 4,
+  "slots": [
+    "mainhand"
+  ]
+}

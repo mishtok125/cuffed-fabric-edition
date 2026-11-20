@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BBB"
+  ],
+  "key": {
+    "B": "cuffed:reinforced_stone"
+  },
+  "result": {
+    "count": 6,
+    "id": "cuffed:reinforced_stone_slab"
+  }
+}

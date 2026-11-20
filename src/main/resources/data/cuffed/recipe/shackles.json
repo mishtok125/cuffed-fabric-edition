@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "NIN"
+  ],
+  "key": {
+    "N": "minecraft:iron_ingot",
+    "I": "minecraft:iron_nugget"
+  },
+  "result": {
+    "id": "cuffed:shackles"
+  }
+}

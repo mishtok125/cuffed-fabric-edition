@@ -1,0 +1,29 @@
+{
+	"required": true,
+	"package": "com.lazrproductions.cuffed.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"PlayerMixin",
+		"AbstractBoatMixin",
+		"LivingEntityMixin",
+		"EntityMixin",
+		
+		"CommandsMixin"
+	],
+	"client": [
+		"HumanoidModelMixin",
+		"AvatarRendererMixin",
+		"EntityRendererMixin",
+		"KeyboardHandlerMixin",
+		"EffectsInInventoryMixin",
+		"MouseHandlerMixin",
+		"ItemInHandRendererMixin",
+		"LocalPlayerMixin",
+		"MinecraftMixin",
+		"GuiMixin",
+		"AbstractClientPlayerMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "cuffed:key"
+  ],
+  "result": {
+    "id": "cuffed:key"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "minecraft:paper",
+    "minecraft:paper",
+    "minecraft:paper",
+    "minecraft:egg"
+  ],
+  "result": {
+    "count": 4,
+    "id": "cuffed:duck_tape"
+  }
+}

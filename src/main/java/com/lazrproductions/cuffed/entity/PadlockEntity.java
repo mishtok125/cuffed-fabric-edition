@@ -1,0 +1,395 @@
+package com.lazrproductions.cuffed.entity;
+
+
+
+
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.core.registries.BuiltInRegistries;
+import java.util.Optional;
+import java.util.UUID;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.lazrproductions.cuffed.CuffedMod;
+import com.lazrproductions.cuffed.api.CuffedAPI;
+import com.lazrproductions.cuffed.init.ModEntityTypes;
+import com.lazrproductions.cuffed.init.ModItems;
+import com.lazrproductions.cuffed.init.ModTags;
+import com.lazrproductions.cuffed.items.KeyItem;
+import com.lazrproductions.cuffed.items.KeyRingItem;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.stats.Stats;
+import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.decoration.HangingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+
+public class PadlockEntity extends net.minecraft.world.entity.decoration.BlockAttachedEntity {
+
+    private static final EntityDataAccessor<Boolean> DATA_LOCKED = SynchedEntityData.defineId(PadlockEntity.class,
+            EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_REINFORCED = SynchedEntityData.defineId(PadlockEntity.class,
+            EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<String> DATA_ITEM_USED_TO_REINFORCE = SynchedEntityData.defineId(PadlockEntity.class,
+            EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> DATA_LOCK_ID = SynchedEntityData.defineId(PadlockEntity.class,
+            EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Boolean> DATA_HAS_BEEN_BOUND = SynchedEntityData.defineId(PadlockEntity.class,
+            EntityDataSerializers.BOOLEAN);
+
+    public PadlockEntity(EntityType<? extends PadlockEntity> type, Level level) {
+        super(type, level);
+    }
+
+    public PadlockEntity(Level world, BlockPos pos) {
+        super(ModEntityTypes.PADLOCK, world, pos);
+        this.setPos((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D);
+        entityData.set(DATA_LOCK_ID, UUID.randomUUID().toString());
+    }
+
+    public boolean isOnSuitableBlock() {
+        return this.level().getBlockState(pos).is(ModTags.Blocks.LOCKABLE_BLOCKS);
+    }
+
+    @Override
+    public void dropItem(net.minecraft.server.level.ServerLevel level, @Nullable Entity entity) {
+        this.playSound(SoundEvents.CHAIN_BREAK, 1.0F, 1.0F);
+        float xO = this.getYRot() == 90.0f ? -1 : this.getYRot() == 270.0f || this.getYRot() == -90.0f ? 1 : 0;
+        float zO = this.getYRot() == 0.0f ? 1 : this.getYRot() == 180.0f || this.getYRot() == -180.0f ? -1 : 0;
+        ItemEntity itementity = new ItemEntity(this.level(), this.pos.getX() + 0.5f + xO, this.pos.getY() + 0.5f,
+                this.pos.getZ() + 0.5f + zO, new ItemStack(ModItems.PADLOCK));
+        itementity.setDefaultPickUpDelay();
+        this.level().addFreshEntity(itementity);
+
+        if(this.isReinforced()) {
+            String i = getItemUsedToReinforce();
+            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(i)));
+            ItemEntity e = new ItemEntity(this.level(), this.pos.getX() + 0.5f + xO, this.pos.getY() + 0.5f,
+                    this.pos.getZ() + 0.5f + zO, stack);
+            e.setDefaultPickUpDelay();
+            this.level().addFreshEntity(e);
+        }
+    }
+
+    @Override
+    public InteractionResult interact(Player interactor, InteractionHand hand, net.minecraft.world.phys.Vec3 location) {
+        if (this.level().isClientSide()) {
+            return InteractionResult.SUCCESS;
+        } else {
+            ItemStack stack = interactor.getItemInHand(hand);
+            if (stack.is(ModItems.CREATIVE_RESTRAINT_CUTTER)) {
+                interactor.awardStat(Stats.ITEM_USED.get(ModItems.CREATIVE_KEY));
+                // Toggle locked
+                if (!interactor.isCrouching()) {
+                    setLocked(!isLocked());
+                    if (isLocked())
+                        interactor.sendOverlayMessage(Component.literal("Padlock locked."));
+                    else
+                        interactor.sendOverlayMessage(Component.literal("Padlock unlocked."));
+
+                    this.playSound(SoundEvents.IRON_TRAPDOOR_OPEN, 1.0F, 1.0F);
+                    return InteractionResult.SUCCESS;
+                } else {
+                    // pickup lock
+                    KeyItem.removeBoundLock(stack);
+                    this.RemoveLock();
+                    return InteractionResult.SUCCESS;
+                }
+            }
+
+            if (stack.is(ModItems.KEY)) {
+                if (KeyItem.isBoundToLock(stack, getLockId())) {
+                    interactor.awardStat(Stats.ITEM_USED.get(ModItems.KEY));
+                    // Toggle locked
+                    if (!interactor.isCrouching()) {
+                        setLocked(!isLocked());
+                        if (isLocked())
+                            interactor.sendOverlayMessage(Component.literal("Padlock locked."));
+                        else
+                            interactor.sendOverlayMessage(Component.literal("Padlock unlocked."));
+
+                        this.playSound(SoundEvents.IRON_TRAPDOOR_OPEN, 1.0F, 1.0F);
+                        return InteractionResult.SUCCESS;
+                    } else {
+                        // pickup lock
+                        KeyItem.removeBoundLock(stack);
+                        this.RemoveLock();
+                        return InteractionResult.SUCCESS;
+                    }
+                } else if(!getHasBeenBound()) {
+                    if (KeyItem.tryToSetBoundId(interactor, stack, getLockId(), "Padlock")) {
+                        bind();
+                        return InteractionResult.SUCCESS;
+                    }
+                }
+            }
+
+            if (stack.is((ModItems.KEY_RING))) {
+                if (KeyRingItem.hasBoundId(stack, getLockId())) {
+                    interactor.awardStat(Stats.ITEM_USED.get(ModItems.KEY_RING));
+                    // Unlock
+                    if (!interactor.isCrouching()) {
+                        setLocked(!isLocked());
+                        if (isLocked())
+                            interactor.sendOverlayMessage(Component.literal("Padlock locked."));
+                        else
+                            interactor.sendOverlayMessage(Component.literal("Padlock unlocked."));
+                        this.playSound(SoundEvents.IRON_TRAPDOOR_OPEN, 1.0F, 1.0F);
+                        return InteractionResult.CONSUME;
+                    } else {
+                        // pickup lock
+                        KeyRingItem.removeBoundId(stack, getLockId());
+                        this.RemoveLock();
+                        return InteractionResult.CONSUME;
+                    }
+                } else if (KeyRingItem.canBindLock(stack) && !getHasBeenBound()) {
+                    if (KeyRingItem.tryToAddBoundId(interactor, stack, getLockId(), "entity.cuffed.padlock"))
+                    {
+                        bind();
+                        return InteractionResult.CONSUME;
+                    }
+                }
+            }
+
+            if (stack.is(ModTags.Items.CAN_REINFORCE_PADLOCK) && !isReinforced()) {
+                interactor.awardStat(Stats.ITEM_USED.get(stack.getItem()));
+                setReinforced(true);
+                setItemUsedToReinforce(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
+                stack.shrink(1);
+                this.playSound(SoundEvents.NETHERITE_BLOCK_PLACE, 1, 1);
+                return InteractionResult.CONSUME;
+            }
+
+            if (stack.is(ModItems.LOCKPICK)) {
+                CuffedAPI.Networking.sendLockpickBeginPickingLockPacketToClient((ServerPlayer) interactor, this.getId(),
+                        isReinforced()
+                                ? CuffedMod.SERVER_CONFIG.LOCKPICKING_SPEED_INCREASE_PER_PICK_FOR_BREAKING_REINFORCED_PADLOCKS.get()
+                                : CuffedMod.SERVER_CONFIG.LOCKPICKING_SPEED_INCREASE_PER_PICK_FOR_BREAKING_PADLOCKS.get(),
+                        isReinforced()
+                                ? CuffedMod.SERVER_CONFIG.LOCKPICKING_PROGRESS_PER_PICK_FOR_BREAKING_REINFORCED_PADLOCKS.get()
+                                : CuffedMod.SERVER_CONFIG.LOCKPICKING_PROGRESS_PER_PICK_FOR_BREAKING_PADLOCKS.get());
+
+                return InteractionResult.SUCCESS;
+            }
+
+            if (stack.is(ModItems.CREATIVE_BIND_BREAKER)) {
+                if(getHasBeenBound()) {
+                    resetBindings();
+                    interactor.sendSystemMessage(Component.translatable("item.cuffed.creative_bind_breaker.use", getDisplayName().getString()));
+                    return InteractionResult.SUCCESS;
+                }
+            }
+
+            return InteractionResult.FAIL;
+        }
+    }
+
+    public static PadlockEntity getOrCreateLockAt(Level level, BlockPos pos, Direction direction) {
+        int i = pos.getX();
+        int j = pos.getY();
+        int k = pos.getZ();
+
+        for (PadlockEntity padlockentity : level.getEntitiesOfClass(PadlockEntity.class,
+                new AABB((double) i - 1.0D, (double) j - 1.0D, (double) k - 1.0D, (double) i + 1.0D, (double) j + 1.0D,
+                        (double) k + 1.0D))) {
+            if (padlockentity.getPos().equals(pos)) {
+                return padlockentity;
+            }
+        }
+
+        PadlockEntity padlockentity1 = new PadlockEntity(level, pos);
+        padlockentity1.setRot(direction.toYRot(), 0);
+        level.addFreshEntity(padlockentity1);
+        return padlockentity1;
+    }
+
+    public static PadlockEntity getLockAt(Level level, BlockPos pos) {
+        if (pos == null)
+            return null;
+
+        int i = pos.getX();
+        int j = pos.getY();
+        int k = pos.getZ();
+
+        for (PadlockEntity padlockentity : level.getEntitiesOfClass(PadlockEntity.class,
+                new AABB((double) i - 1.0D, (double) j - 1.0D, (double) k - 1.0D, (double) i + 1.0D, (double) j + 1.0D,
+                        (double) k + 1.0D))) {
+            if (padlockentity.getPos().equals(pos)) {
+                return padlockentity;
+            }
+        }
+
+        return null;
+    }
+
+    public void RemoveLock() {
+        float xO = this.getYRot() == 90.0f ? -1 : this.getYRot() == 270.0f || this.getYRot() == -90.0f ? 1 : 0;
+        float zO = this.getYRot() == 0.0f ? 1 : this.getYRot() == 180.0f || this.getYRot() == -180.0f ? -1 : 0;
+        ItemEntity itementity = new ItemEntity(this.level(), this.pos.getX() + 0.5f + xO, this.pos.getY() + 0.5f,
+                this.pos.getZ() + 0.5f + zO, new ItemStack(ModItems.PADLOCK));
+        itementity.setDefaultPickUpDelay();
+        this.level().addFreshEntity(itementity);
+
+        if (isReinforced()) {
+            String i = getItemUsedToReinforce();
+            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(i)));
+            ItemEntity e = new ItemEntity(this.level(), this.pos.getX() + 0.5f + xO, this.pos.getY() + 0.5f,
+                    this.pos.getZ() + 0.5f + zO, stack);
+            e.setDefaultPickUpDelay();
+            this.level().addFreshEntity(e);
+        }
+
+        this.playSound(SoundEvents.CHAIN_BREAK, 1.0F, 1.0F);
+        this.discard();
+    }
+
+    @Override
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel level, DamageSource source, float amount) {
+        return false;
+    }
+
+    @Override
+    public void setPos(double x, double y, double z) {
+        super.setPos((double) Mth.floor(x) + 0.5D, (double) Mth.floor(y) + 0.5D, (double) Mth.floor(z) + 0.5D);
+    }
+
+
+
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        return distance < 1024.0D;
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(DATA_LOCKED, false);
+        builder.define(DATA_REINFORCED, false);
+        builder.define(DATA_ITEM_USED_TO_REINFORCE, "empty");
+        builder.define(DATA_LOCK_ID, "");
+        builder.define(DATA_HAS_BEEN_BOUND, false);
+    }
+
+    @Override
+    protected void addAdditionalSaveData(ValueOutput tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putBoolean("Locked", this.isLocked());
+        tag.putBoolean("Reinforced", this.isReinforced());
+        tag.store("LockId", net.minecraft.core.UUIDUtil.CODEC, this.getLockId());
+        tag.putBoolean("HasBeenBound", this.getHasBeenBound());
+        tag.putString("ItemUsedToReinforce", this.getItemUsedToReinforce());
+    }
+
+    @Override
+    protected void readAdditionalSaveData(ValueInput tag) {
+        super.readAdditionalSaveData(tag);
+
+        this.entityData.set(DATA_LOCKED, tag.getBooleanOr("Locked", false));
+        this.setLocked(tag.getBooleanOr("Locked", false));
+
+        this.entityData.set(DATA_REINFORCED, tag.getBooleanOr("Reinforced", false));
+        this.setReinforced(tag.getBooleanOr("Reinforced", false));
+        
+        this.setItemUsedToReinforce(tag.getStringOr("ItemUsedToReinforce", ""));
+        
+        this.entityData.set(DATA_LOCK_ID, tag.read("LockId", net.minecraft.core.UUIDUtil.CODEC).orElseGet(UUID::randomUUID).toString());
+
+        this.entityData.set(DATA_HAS_BEEN_BOUND, tag.getBooleanOr("HasBeenBound", false));
+    }
+
+    @Override
+    public boolean survives() {
+        return !this.level().getBlockState(this.pos).isAir();
+    }
+
+    public void playPlacementSound() {
+        this.playSound(SoundEvents.NETHERITE_BLOCK_PLACE, 1.0F, 1.0F);
+    }
+
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity) {
+        return new ClientboundAddEntityPacket(this, 0, this.getPos());
+    }
+
+    @Override
+    public ItemStack getPickResult() {
+        return new ItemStack(ModItems.PADLOCK);
+    }
+
+    public void setLocked(boolean value) {
+        this.entityData.set(DATA_LOCKED, value);
+    }
+
+    public void setReinforced(boolean value) {
+        this.entityData.set(DATA_REINFORCED, value);
+    }
+
+    public boolean isLocked() {
+        return this.entityData.get(DATA_LOCKED);
+    }
+
+    public boolean isReinforced() {
+        return this.entityData.get(DATA_REINFORCED);
+    }
+
+    public String getItemUsedToReinforce() {
+        return this.entityData.get(DATA_ITEM_USED_TO_REINFORCE);
+    }
+    public void setItemUsedToReinforce(String value) {
+        this.entityData.set(DATA_ITEM_USED_TO_REINFORCE, value);
+    }
+
+    public UUID getLockId() {
+        String s = entityData.get(DATA_LOCK_ID);
+        try {
+            return s.isEmpty() ? new UUID(0, 0) : UUID.fromString(s);
+        } catch (IllegalArgumentException e) {
+            return new UUID(0, 0);
+        }
+    }
+
+    public boolean getHasBeenBound() {
+        return entityData.get(DATA_HAS_BEEN_BOUND);
+    }
+    public void bind() {
+        entityData.set(DATA_HAS_BEEN_BOUND, true);
+    }
+    public void resetBindings() {
+        setLocked(false);
+        entityData.set(DATA_HAS_BEEN_BOUND, false);
+        entityData.set(DATA_LOCK_ID, UUID.randomUUID().toString());
+    }
+
+    @Override
+    protected void recalculateBoundingBox() {
+        this.setPosRaw((double) this.pos.getX() + 0.5D, (double) this.pos.getY() + 0.3D,
+                (double) this.pos.getZ() + 0.5D);
+
+        this.setBoundingBox(new AABB(this.getX() - 0.52D, this.getY() - 0.12D, this.getZ() - 0.52D,
+                this.getX() + 0.52D, this.getY() + 0.13D, this.getZ() + 0.52D));
+    }
+}

@@ -1,0 +1,61 @@
+{
+  "model": {
+    "type": "minecraft:range_dispatch",
+    "property": "cuffed:poster",
+    "entries": [
+      {
+        "threshold": 1.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "cuffed:item/poster_serenity"
+        }
+      },
+      {
+        "threshold": 2.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "cuffed:item/poster_skeleton"
+        }
+      },
+      {
+        "threshold": 3.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "cuffed:item/poster_impunity"
+        }
+      },
+      {
+        "threshold": 4.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "cuffed:item/poster_zooom"
+        }
+      },
+      {
+        "threshold": 5.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "cuffed:item/poster_ashadowlockedaway"
+        }
+      },
+      {
+        "threshold": 6.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "cuffed:item/poster_prisoner"
+        }
+      },
+      {
+        "threshold": 7.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "cuffed:item/poster_lantern"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "cuffed:item/poster"
+    }
+  }
+}
