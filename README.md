@@ -1,5 +1,7 @@
 # Cuffed: Fabric Edition
 
+English · [Русский](README.ru.md)
+
 Handcuffs, chains, keys, and lockpicking for Minecraft roleplay. Cuffed: Fabric Edition is an unofficial port of Cuffed from Forge 1.20.1 to Fabric on Minecraft 26.2.
 
 ## Features
@@ -18,6 +20,10 @@ Handcuffs, chains, keys, and lockpicking for Minecraft roleplay. Cuffed: Fabric 
 ## Building from source
 
 Use JDK 25 and run `./gradlew build` on Linux or macOS, or `.\gradlew.bat build` on Windows. The mod JAR is written to `build/libs/`.
+
+## Issues and suggestions
+
+Use [Issues](https://github.com/mishtok125/cuffed-fabric-edition/issues/new/choose) to report a bug or suggest a feature. Templates are available in English and Russian.
 
 ## Credits and license
 
